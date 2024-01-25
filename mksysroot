@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+# Note bug workaround: Redhat's usr/lib/debug/lib and usr/lib/debug/lib64 is a symlink back to a
+# parent directory, which confuses bazel's symlink flattening.
+
+find /sysroot \
+     \( \
+     -path '*/bin' -o \
+     -path '*/sbin' -o \
+     -path '*/sbin' -o \
+     -path '/sysroot/etc' -o \
+     -path '/sysroot/dev' -o \
+     -path '/sysroot/var' -o \
+     -path '/sysroot/usr/share' -o \
+     -path '*/libexec' -o \
+     -path '*/python\*' -o \
+     -path '/sysroot/usr/lib/debug/lib' -o \
+     -path '/sysroot/usr/lib/debug/lib64' -o \
+     -false \
+     \) -prune -o \
+     \( \
+     -path '*/include/*' -o \
+     -name lib\* -o \
+     -name \*.o -o \
+     -name \*.a -o \
+     -name \*.ld -o \
+     -name \*.lds -o \
+     -name 'ld*so*' -o \
+     -false \
+     \) -printf '%P\n' > /tmp/file.list
+
+tar cJvf /sysroot.tar.xz -C /sysroot \
+    --verbatim-files-from --no-recursion -T /tmp/file.list
